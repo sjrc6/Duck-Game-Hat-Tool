@@ -63,6 +63,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AboutThisToolBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="AboutThisToolBox.Designer.cs">
+      <DependentUpon>AboutThisToolBox.cs</DependentUpon>
+    </Compile>
     <Compile Include="ConsoleModeController.cs" />
     <Compile Include="MainUIForm.cs">
       <SubType>Form</SubType>
@@ -73,6 +79,9 @@
     <Compile Include="Program.cs" />
     <Compile Include="ProgramCore.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="AboutThisToolBox.resx">
+      <DependentUpon>AboutThisToolBox.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="MainUIForm.resx">
       <DependentUpon>MainUIForm.cs</DependentUpon>
     </EmbeddedResource>

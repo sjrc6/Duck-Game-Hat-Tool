@@ -421,7 +421,10 @@ namespace DuckGameHatCompilerGUI
 
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
-
+            using( AboutThisToolBox aboutbox = new AboutThisToolBox() )
+            {
+                aboutbox.ShowDialog(this);
+            }
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
