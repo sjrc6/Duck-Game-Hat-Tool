@@ -32,11 +32,14 @@ namespace DuckGameHatCompilerGUI
 
 		System.IO.FileSystemWatcher watcher;	//but who watches the watchmen?
         System.Media.SoundPlayer quackPlayer;
+        
+        int imageSizeMultiplier;
 
         public DGHC_MainForm( ProgramCore core )
         {
             InitializeComponent();
             this.core = core;
+            imageSizeMultiplier = 4;
 
             //drag and drop support
 			this.DragEnter += new DragEventHandler( FileDragEnter );
@@ -140,7 +143,7 @@ namespace DuckGameHatCompilerGUI
                 {
                     Image oldimg = Image.FromStream( ms );
 
-                    Image img = ResizeImage(oldimg, 4);
+                    Image img = ResizeImage(oldimg, imageSizeMultiplier);
 
                     oldimg.Dispose();
 
@@ -260,7 +263,7 @@ namespace DuckGameHatCompilerGUI
             {
                 System.IO.Stream noColorStream = myAssembly.GetManifestResourceStream("DuckGameHatCompilerGUI.EmbeddedResources.baseduck_nocolor.png");
                 Image img = Image.FromStream(noColorStream);
-                noColorDuck = ResizeImage(img, 4);
+                noColorDuck = ResizeImage(img, imageSizeMultiplier);
                 img.Dispose();
             }
 
@@ -272,7 +275,7 @@ namespace DuckGameHatCompilerGUI
 
             System.IO.Stream ColorStream = myAssembly.GetManifestResourceStream("DuckGameHatCompilerGUI.EmbeddedResources.baseduck_color.png");
             Image cimg = Image.FromStream(ColorStream);
-            colorDuck = ResizeImage(cimg, 4);
+            colorDuck = ResizeImage(cimg, imageSizeMultiplier);
             cimg.Dispose();
         }
 
@@ -291,7 +294,7 @@ namespace DuckGameHatCompilerGUI
                 finalDuck = null;
             }
 
-            finalDuck = new Bitmap(64 * 4, 32 * 4);
+            finalDuck = new Bitmap(64 * imageSizeMultiplier, 32 * imageSizeMultiplier);
 
             float[][] colorMatrixElements = { 
                new float[] { newColor.R / 255f, 0 , 0,  0, 0},        // red scaling factor of 2 

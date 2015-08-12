@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("DuckGameHatCompilerGUI")]
+[assembly: AssemblyTitle("Duck Game Hat Tool")]
 [assembly: AssemblyDescription("Packs your hats for your ducks to wear, also reads .hat files.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("PENISCorp")]
