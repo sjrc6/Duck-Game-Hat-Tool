@@ -1,4 +1,4 @@
-﻿namespace DuckGameHatCompilerGUI
+﻿namespace DuckGameHatCompiler
 {
     partial class AboutThisToolBox
     {

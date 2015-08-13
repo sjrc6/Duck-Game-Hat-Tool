@@ -8,7 +8,7 @@ using System.Text;
 
 //this is the class that handles all the logic from the UI, this way if the user doesn't want to use the GUI, we can still work in console mode
 
-namespace DuckGameHatCompilerGUI
+namespace DuckGameHatCompiler
 {
     public class CurrentFileInfo
     {

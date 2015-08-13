@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace DuckGameHatCompilerGUI
+namespace DuckGameHatCompiler
 {
     public partial class DGHC_MainForm : Form
     {

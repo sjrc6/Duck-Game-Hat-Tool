@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace DuckGameHatCompilerGUI
+namespace DuckGameHatCompiler
 {
     class ConsoleModeController
     {
@@ -18,7 +18,7 @@ namespace DuckGameHatCompilerGUI
             this.args = (string[])programargs.Clone();
         }
 
-        public void Run()
+        public virtual void Run()
         {
             if ( cliMode )
             {
@@ -27,7 +27,7 @@ namespace DuckGameHatCompilerGUI
             else
             {
                 bool shouldExit = false;
-                while( !shouldExit )
+                while( shouldExit )
                 {
                     shouldExit = HandleConsole();
                 }
@@ -46,7 +46,7 @@ namespace DuckGameHatCompilerGUI
 
 
             //we're done here
-            return true;
+            return false;
         }
     }
 }

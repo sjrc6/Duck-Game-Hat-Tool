@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace DuckGameHatCompilerGUI.Properties
+namespace DuckGameHatCompiler.Properties
 {
 
 
