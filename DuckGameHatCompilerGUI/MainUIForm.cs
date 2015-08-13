@@ -35,6 +35,9 @@ namespace DuckGameHatCompilerGUI
         
         int imageSizeMultiplier;
 
+        bool acceptCurrentDrop;
+        bool enableWatcher = false; //TODO: config
+
         public DGHC_MainForm( ProgramCore core )
         {
             InitializeComponent();
@@ -50,9 +53,12 @@ namespace DuckGameHatCompilerGUI
             this.hatsSmallPictureBox.MouseUp += new System.Windows.Forms.MouseEventHandler(this.hatsPictureBox_ReleaseClick);
 
             //doesn't work for now, gotta figure out why
-            //watcher = new System.IO.FileSystemWatcher();
-			//watcher.Changed += new FileSystemEventHandler( OnPNGFileChanged );
-            
+            if ( enableWatcher )
+            {
+                watcher = new System.IO.FileSystemWatcher();
+                watcher.Changed += new FileSystemEventHandler(OnPNGFileChanged);
+            }
+
             noColorDuck = null;
             colorDuck = null;
         }
@@ -73,20 +79,22 @@ namespace DuckGameHatCompilerGUI
 
 		void StartWatchingFile( string abspath )
 		{
-            /*
-			watcher.Path = System.IO.Path.GetDirectoryName( abspath );
-			watcher.Filter = System.IO.Path.GetFileName( abspath );
-            watcher.EnableRaisingEvents = true;
-			*/
+            if (watcher != null)
+            {
+                watcher.Path = System.IO.Path.GetDirectoryName(abspath);
+                watcher.Filter = System.IO.Path.GetFileName(abspath);
+                watcher.EnableRaisingEvents = true;
+            }
 		}
 
 		void StopWatchingFile()
 		{
-            /*
-			watcher.Path = null;
-			watcher.Filter = null;
-            watcher.EnableRaisingEvents = false;
-			*/
+            if (watcher != null)
+            {
+                watcher.Path = null;
+                watcher.Filter = null;
+                watcher.EnableRaisingEvents = false;
+            }
 		}
 
 		void OnPNGFileChanged(object source, FileSystemEventArgs e)
@@ -100,14 +108,29 @@ namespace DuckGameHatCompilerGUI
 
 		void FileDragEnter( object sender, DragEventArgs e )
 		{
-			if ( e.Data.GetDataPresent(DataFormats.FileDrop))
+			if ( e.Data.GetDataPresent(DataFormats.FileDrop) )
 			{
-				e.Effect = DragDropEffects.Copy;
+                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+
+                //we don't handle multiple files, or files we can't even read
+                if ( files.Length > 1 || !core.CanReadFile(files.First()) )
+                {
+                    e.Effect = DragDropEffects.None;
+                    acceptCurrentDrop = false;
+                }
+                else
+                {
+                    e.Effect = DragDropEffects.Copy;
+                    acceptCurrentDrop = true;
+                }
 			}
 		}
 
 		void FileDragDrop( object sender, DragEventArgs e )
 		{
+            if ( !acceptCurrentDrop )
+                return;
+
 			string[] files = (string[])e.Data.GetData( DataFormats.FileDrop );
 			foreach( string file in files )
 			{
@@ -117,6 +140,8 @@ namespace DuckGameHatCompilerGUI
 					break;
 				}
 			}
+
+            acceptCurrentDrop = false;
 		}
 		
         public void UpdateImage()

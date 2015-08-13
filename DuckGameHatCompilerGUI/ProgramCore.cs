@@ -166,10 +166,13 @@ namespace DuckGameHatCompilerGUI
 
         public bool OpenFile( string abspath , bool modifycurrent = false )
         {
-            CloseCurrent(true);
-            
             if (!System.IO.File.Exists(abspath))
                 return false;
+
+            if (!CanReadFile(abspath))
+                return false;
+
+            CloseCurrent(true);
 
             return ParseFile( abspath );
         }
@@ -209,6 +212,13 @@ namespace DuckGameHatCompilerGUI
             }
 
             return true;
+        }
+
+        //I need to make this less lame in some way, I don't like repeating code and this seems prone to do that
+        public bool CanReadFile( string abspath )
+        {
+            string ext = System.IO.Path.GetExtension(abspath).ToLower();
+            return ext.Contains( ".png" ) || ext.Contains( ".hat" );
         }
 
         bool ParseFile( string abspath , bool modifycurrent = false )
