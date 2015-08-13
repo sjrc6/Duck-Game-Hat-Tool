@@ -11,11 +11,18 @@ namespace DuckGameHatCompiler
         private bool cliMode;
         private string[] args;
 
-        public ConsoleModeController( ProgramCore core , bool cliMode, string[] programargs )
+        public ConsoleModeController( ProgramCore core, string[] programargs )
         {
             this.core = core;
-            this.cliMode = cliMode;
             this.args = (string[])programargs.Clone();
+            foreach( string arg in args)
+            {
+                if( arg.Contains( "-c" ) )
+                {
+                    cliMode = true;
+                    continue;
+                }
+            }
         }
 
         public virtual void Run()
@@ -37,7 +44,7 @@ namespace DuckGameHatCompiler
         //handle the args and execute the passed parameters
         public void HandleCLI()
         {
-            //remove -console and -cli from the arguments
+            
         }
         
         //return true to restart the GUI cycle, return false to quit

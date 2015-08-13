@@ -72,7 +72,7 @@ namespace DuckGameHatCompiler
 
 
             System.Reflection.Assembly myAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-            System.IO.Stream quackSoundStream = myAssembly.GetManifestResourceStream("DuckGameHatCompilerGUI.EmbeddedResources.quack.wav");
+            System.IO.Stream quackSoundStream = myAssembly.GetManifestResourceStream("DuckGameHatCompiler.EmbeddedResources.quack.wav");
 
             quackPlayer = new System.Media.SoundPlayer(quackSoundStream);
         }
@@ -286,7 +286,7 @@ namespace DuckGameHatCompiler
             //only need to load this once
             if( noColorDuck == null )
             {
-                System.IO.Stream noColorStream = myAssembly.GetManifestResourceStream("DuckGameHatCompilerGUI.EmbeddedResources.baseduck_nocolor.png");
+                System.IO.Stream noColorStream = myAssembly.GetManifestResourceStream("DuckGameHatCompiler.EmbeddedResources.baseduck_nocolor.png");
                 Image img = Image.FromStream(noColorStream);
                 noColorDuck = ResizeImage(img, imageSizeMultiplier);
                 img.Dispose();
@@ -298,7 +298,7 @@ namespace DuckGameHatCompiler
                 colorDuck = null;
             }
 
-            System.IO.Stream ColorStream = myAssembly.GetManifestResourceStream("DuckGameHatCompilerGUI.EmbeddedResources.baseduck_color.png");
+            System.IO.Stream ColorStream = myAssembly.GetManifestResourceStream("DuckGameHatCompiler.EmbeddedResources.baseduck_color.png");
             Image cimg = Image.FromStream(ColorStream);
             colorDuck = ResizeImage(cimg, imageSizeMultiplier);
             cimg.Dispose();

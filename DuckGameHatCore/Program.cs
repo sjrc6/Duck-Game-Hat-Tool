@@ -29,8 +29,7 @@ namespace DuckGameHatCompiler
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new DGHC_MainForm( core ));
 #else
-            bool cliMode = false;
-            ConsoleModeController consoleController = new ConsoleModeController(core, cliMode, args);
+            ConsoleModeController consoleController = new ConsoleModeController(core, args);
             consoleController.Run();
 #endif
                 
