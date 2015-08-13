@@ -27,7 +27,7 @@ namespace DuckGameHatCompiler
 #if !CONSOLEMODE
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new DGHC_MainForm( core ));
+            Application.Run(new DGHC_MainForm( core , args ));
 #else
             ConsoleModeController consoleController = new ConsoleModeController(core, args);
             consoleController.Run();

@@ -37,12 +37,23 @@ namespace DuckGameHatCompiler
 
         bool acceptCurrentDrop;
         bool enableWatcher = false; //TODO: config
+        private List<string> processFiles;
 
-        public DGHC_MainForm( ProgramCore core )
+        public DGHC_MainForm( ProgramCore core , string[] programargs )
         {
             InitializeComponent();
-            this.core = core;
+            this.processFiles = new List<String>();
+
+            foreach (string arg in programargs.ToList<string>())
+            {
+                if (!arg.StartsWith("-") && System.IO.File.Exists(arg) && core.CanReadFile(arg))
+                {
+                    this.processFiles.Add(arg);
+                }
+            }
             imageSizeMultiplier = 4;
+            this.core = core;
+            
 
             //drag and drop support
 			this.DragEnter += new DragEventHandler( FileDragEnter );
@@ -61,6 +72,8 @@ namespace DuckGameHatCompiler
 
             noColorDuck = null;
             colorDuck = null;
+
+            
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -70,11 +83,20 @@ namespace DuckGameHatCompiler
             this.quackMode.Checked = false;
             UpdateForm(false);
 
-
             System.Reflection.Assembly myAssembly = System.Reflection.Assembly.GetExecutingAssembly();
             System.IO.Stream quackSoundStream = myAssembly.GetManifestResourceStream("DuckGameHatCompiler.EmbeddedResources.quack.wav");
 
             quackPlayer = new System.Media.SoundPlayer(quackSoundStream);
+
+            foreach( string filename in processFiles )
+            {
+                //open only the first valid one
+                if( core.OpenFile( filename ) )
+                {
+                    UpdateForm();
+                    break;
+                }
+            }
         }
 
 		void StartWatchingFile( string abspath )
@@ -138,7 +160,7 @@ namespace DuckGameHatCompiler
 				{
 					UpdateForm();
 					break;
-				}
+                }
 			}
 
             acceptCurrentDrop = false;
