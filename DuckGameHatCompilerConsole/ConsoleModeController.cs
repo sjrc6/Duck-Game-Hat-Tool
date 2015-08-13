@@ -46,7 +46,7 @@ namespace DuckGameHatCompiler
 
 
             //we're done here
-            return false;
+            return true;
         }
     }
 }

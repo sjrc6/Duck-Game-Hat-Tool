@@ -7,8 +7,8 @@
     <ProjectGuid>{F01DECE3-C125-4029-9069-02C896B544F2}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DuckGameHatCompilerConsole</RootNamespace>
-    <AssemblyName>DuckGameHatCompilerConsole</AssemblyName>
+    <RootNamespace>DuckGameHatCompiler</RootNamespace>
+    <AssemblyName>DuckGameHatCompiler</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <PublishUrl>publish\</PublishUrl>
@@ -48,6 +48,17 @@
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>DuckGameHatCompiler.Program</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>bin\x86\Debug\</OutputPath>
+    <DefineConstants>TRACE;DEBUG;CONSOLEMODE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputPath>release\</OutputPath>
+    <DefineConstants>CONSOLEMODE</DefineConstants>
+    <Optimize>true</Optimize>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
