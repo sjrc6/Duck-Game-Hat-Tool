@@ -10,17 +10,13 @@ using System.Windows.Forms;
 
 namespace DuckGameHatCompiler
 {
-    public partial class DGHC_MainForm : Form
-    {
-        private ProgramCore core;
+	public partial class DGHC_MainForm : Form
+	{
+		private ProgramCore core;
 
-        private Image noColorDuck;
-        private Image colorDuck;
-        private Image finalDuck;
+		private string basetitle = "Duck Game Hat Tool";
 
-        private string basetitle = "Duck Game Hat Tool";
-        
-        Color[] duckColors = new Color[]
+		private static Color[] duckColors = new Color[]
         {
             Color.FromArgb( 255 , 255 , 255 , 255 ),
             Color.FromArgb( 255 , 125, 125, 125 ),
@@ -28,536 +24,627 @@ namespace DuckGameHatCompiler
             Color.FromArgb( 205, 107, 29)
         };
 
-        Color lastColor;
+		private static Color transparencyColor = Color.FromArgb( 255 , 255 , 0 , 255 );
 
-		System.IO.FileSystemWatcher watcher;	//but who watches the watchmen?
-        System.Media.SoundPlayer quackPlayer;
-        
-        int imageSizeMultiplier;
+		private Color currentDuckColor;
 
-        bool acceptCurrentDrop;
-        bool enableWatcher = false; //TODO: config
-        private List<string> processFiles;
-
-        public DGHC_MainForm( ProgramCore core , string[] programargs )
-        {
-            InitializeComponent();
-            this.processFiles = new List<String>();
-
-            foreach (string arg in programargs.ToList<string>())
-            {
-                if (!arg.StartsWith("-") && System.IO.File.Exists(arg) && core.CanReadFile(arg))
-                {
-                    this.processFiles.Add(arg);
-                }
-            }
-            imageSizeMultiplier = 4;
-            this.core = core;
-            
-
-            //drag and drop support
-			this.DragEnter += new DragEventHandler( FileDragEnter );
-			this.DragDrop += new DragEventHandler( FileDragDrop );
-            
-            //quack box
-            this.hatsSmallPictureBox.MouseDown += new System.Windows.Forms.MouseEventHandler(this.hatsPictureBox_Click);
-            this.hatsSmallPictureBox.MouseUp += new System.Windows.Forms.MouseEventHandler(this.hatsPictureBox_ReleaseClick);
-
-            //doesn't work for now, gotta figure out why
-            if ( enableWatcher )
-            {
-                watcher = new System.IO.FileSystemWatcher();
-                watcher.Changed += new FileSystemEventHandler(OnPNGFileChanged);
-            }
-
-            noColorDuck = null;
-            colorDuck = null;
-
-            
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            ChangeDuckColor(duckColors[0]);
-            whiteDuckButton.Checked = true;
-            this.quackMode.Checked = false;
-            UpdateForm(false);
-
-            System.Reflection.Assembly myAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-            System.IO.Stream quackSoundStream = myAssembly.GetManifestResourceStream("DuckGameHatCompiler.EmbeddedResources.quack.wav");
-
-            quackPlayer = new System.Media.SoundPlayer(quackSoundStream);
-
-            foreach( string filename in processFiles )
-            {
-                //open only the first valid one
-                if( core.OpenFile( filename ) )
-                {
-                    UpdateForm();
-                    break;
-                }
-            }
-        }
-
-		void StartWatchingFile( string abspath )
+		public bool isQuackMode
 		{
-            if (watcher != null)
-            {
-                watcher.Path = System.IO.Path.GetDirectoryName(abspath);
-                watcher.Filter = System.IO.Path.GetFileName(abspath);
-                watcher.EnableRaisingEvents = true;
-            }
-		}
-
-		void StopWatchingFile()
-		{
-            if (watcher != null)
-            {
-                watcher.Path = null;
-                watcher.Filter = null;
-                watcher.EnableRaisingEvents = false;
-            }
-		}
-
-		void OnPNGFileChanged(object source, FileSystemEventArgs e)
-		{
-			if ( core == null || e.ChangeType != WatcherChangeTypes.Changed )
-				return;
-
-			core.OpenFile( e.FullPath, true );
-
-		}
-
-		void FileDragEnter( object sender, DragEventArgs e )
-		{
-			if ( e.Data.GetDataPresent(DataFormats.FileDrop) )
+			get
 			{
-                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
-
-                //we don't handle multiple files, or files we can't even read
-                if ( files.Length > 1 || !core.CanReadFile(files.First()) )
-                {
-                    e.Effect = DragDropEffects.None;
-                    acceptCurrentDrop = false;
-                }
-                else
-                {
-                    e.Effect = DragDropEffects.Copy;
-                    acceptCurrentDrop = true;
-                }
+				return this.quackMode.Checked;
 			}
 		}
 
-		void FileDragDrop( object sender, DragEventArgs e )
-		{
-            if ( !acceptCurrentDrop )
-                return;
+		public bool isQuacking;
 
-			string[] files = (string[])e.Data.GetData( DataFormats.FileDrop );
-			foreach( string file in files )
+		private System.IO.FileSystemWatcher watcher;	//but who watches the watchmen?
+		private System.Media.SoundPlayer quackPlayer;
+
+		private int imageSizeMultiplier;
+
+		private bool acceptCurrentDrop;
+		private bool enableWatcher = false; //TODO: config
+		private List<string> processFiles = new List<String>();
+
+
+		/* 
+		 * 0 = 64x32 image of the duck
+		 * 1 = 32x32 image of the duck not quacking
+		 * 2 = 32x32 image of the duck quacking
+		 */
+
+		private DuckStateManager duckStateManager = new DuckStateManager();	
+			
+		
+		public DGHC_MainForm( ProgramCore mycore , string[] programargs )
+		{
+			InitializeComponent();
+
+			this.core = mycore;
+
+			foreach( string arg in programargs.ToList<string>() )
 			{
-				if ( core.OpenFile(file) )
+				if( !arg.StartsWith( "-" ) && System.IO.File.Exists( arg ) && core.CanReadFile( arg ) )
+				{
+					this.processFiles.Add( arg );
+				}
+			}
+
+			imageSizeMultiplier = 4;
+
+			//drag and drop support
+			this.DragEnter += new DragEventHandler( FileDragEnter );
+			this.DragDrop += new DragEventHandler( FileDragDrop );
+
+			//quack box
+			this.hatsSmallPictureBox.MouseDown += new System.Windows.Forms.MouseEventHandler( this.hatsPictureBox_Click );
+			this.hatsSmallPictureBox.MouseUp += new System.Windows.Forms.MouseEventHandler( this.hatsPictureBox_ReleaseClick );
+
+			//doesn't work for now, gotta figure out why
+			if( enableWatcher )
+			{
+				watcher = new System.IO.FileSystemWatcher();
+				watcher.Changed += new FileSystemEventHandler( OnPNGFileChanged );
+			}
+		}
+
+		private void Form1_Load( object sender , EventArgs e )
+		{
+			ChangeDuckColor( duckColors[0] );
+			whiteDuckButton.Checked = true;
+			this.quackMode.Checked = false;
+			UpdateForm();
+
+			System.Reflection.Assembly myAssembly = System.Reflection.Assembly.GetExecutingAssembly();
+			System.IO.Stream quackSoundStream = myAssembly.GetManifestResourceStream( "DuckGameHatCompiler.EmbeddedResources.quack.wav" );
+
+			quackPlayer = new System.Media.SoundPlayer( quackSoundStream );
+
+			foreach( string filename in processFiles )
+			{
+				//open only the first valid one
+				if( core.OpenFile( filename ) )
 				{
 					UpdateForm();
 					break;
-                }
+				}
+			}
+		}
+
+		void StartWatchingFile( string abspath )
+		{
+			if( watcher != null )
+			{
+				watcher.Path = System.IO.Path.GetDirectoryName( abspath );
+				watcher.Filter = System.IO.Path.GetFileName( abspath );
+				watcher.EnableRaisingEvents = true;
+			}
+		}
+
+		void StopWatchingFile( )
+		{
+			if( watcher != null )
+			{
+				watcher.Path = null;
+				watcher.Filter = null;
+				watcher.EnableRaisingEvents = false;
+			}
+		}
+
+		void OnPNGFileChanged( object source , FileSystemEventArgs e )
+		{
+			if( e.ChangeType != WatcherChangeTypes.Changed )
+				return;
+
+			core.OpenFile( e.FullPath , true );
+
+		}
+
+		void FileDragEnter( object sender , DragEventArgs e )
+		{
+			if( e.Data.GetDataPresent( DataFormats.FileDrop ) )
+			{
+				string[] files = ( string[] )e.Data.GetData( DataFormats.FileDrop );
+
+				//we don't handle multiple files, or files we can't even read
+				if( files.Length > 1 || !core.CanReadFile( files.First() ) )
+				{
+					e.Effect = DragDropEffects.None;
+					acceptCurrentDrop = false;
+				}
+				else
+				{
+					e.Effect = DragDropEffects.Copy;
+					acceptCurrentDrop = true;
+				}
+			}
+		}
+
+		void FileDragDrop( object sender , DragEventArgs e )
+		{
+			if( !acceptCurrentDrop )
+				return;
+
+			string[] files = ( string[] )e.Data.GetData( DataFormats.FileDrop );
+			foreach( string file in files )
+			{
+				if( core.OpenFile( file ) )
+				{
+					UpdateForm();
+					break;
+				}
 			}
 
-            acceptCurrentDrop = false;
+			acceptCurrentDrop = false;
 		}
-		
-        public void UpdateImage()
-        {
-            //goddamn memory leaks
-            if (this.hatImageBox.Image != null && this.hatImageBox.Image != finalDuck )
-            {
-                this.hatImageBox.Image.Dispose();
-            }
 
-            if (this.hatsSmallPictureBox.Image != null && this.hatsSmallPictureBox.Image != finalDuck)
-            {
-                this.hatsSmallPictureBox.Image.Dispose();
-            }
+		Image GetImage( bool withhat = true , bool separate = false , bool quack = false )
+		{
+			
+			//check if this hat was already cached with this color and hat, otherwise dispose of them
+			
+			Image imageresult = duckStateManager.GetImage( withhat , currentDuckColor , separate , quack );
 
-            if (finalDuck == null)
-            {
-                ChangeDuckColor(lastColor);
-            }
+			//skip all the work, we've already got this
+			if( imageresult != null )
+			{
+				return imageresult;
+			}
 
-            if ( core != null && core.FileInfo != null && core.FileInfo.TextureData != null)
-            {
-                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(core.FileInfo.TextureData))
-                {
-                    Image oldimg = Image.FromStream( ms );
+			using( Bitmap workingimage = new Bitmap( 64 , 32 ) )
+			using( Bitmap halfimage = new Bitmap( 32 , 32 ) )
+			using( Image duck = GetDuck() )
+			{
+				using( Graphics g = Graphics.FromImage( workingimage ) )
+				{
+					g.DrawImage( duck , new Rectangle( Point.Empty , workingimage.Size ) );
 
-                    Image img = ResizeImage(oldimg, imageSizeMultiplier);
+					//load the hat and then draw it too
+					if( withhat )
+					{
 
-                    oldimg.Dispose();
+						using( System.IO.MemoryStream ms = new System.IO.MemoryStream( core.FileInfo.TextureData ) )
+						using( Image hattemp = Image.FromStream( ms ) )
+						using( Bitmap hat = new Bitmap( hattemp ) )
+						{
+							hat.MakeTransparent( transparencyColor );
+							Rectangle rect = new Rectangle( 0 , 0 , hat.Width , hat.Height );
+							
+							g.DrawImage( hat , rect );
+							
+							//this hat is small, draw it again on the second panel this time
 
-                    Image overlapped = OverlapImages(finalDuck, img, finalDuck.Width, finalDuck.Height);
+							if( hat.Width <= 32 )
+							{
+								rect.X = -32;
+								g.DrawImage( hat , rect );
+							}
 
-                    img.Dispose();
+						}
 
-                    this.hatImageBox.Image = overlapped;
-                    this.hatsSmallPictureBox.Image = overlapped;
-                }
-            }
-            else
-            {
+					}
+
+				}
+
+				//we need to separate this image into two, so we're going to create another image and use that for the result instead
+				
+				if( separate )
+				{
+					//halve the width of the total image, then add an offset depending on the quack
+					int xoffset = 0;
+					if( quack )
+					{
+						xoffset = 32;
+					}
+
+					using( Graphics g = Graphics.FromImage( halfimage ) )
+					{
+						Rectangle rect = new Rectangle( -xoffset , 0 , workingimage.Width , workingimage.Height );
+						g.DrawImage( workingimage , rect );
+					}
+
+					imageresult = ResizeImage( halfimage , imageSizeMultiplier );
+				}
+				else
+				{
+					imageresult = ResizeImage( workingimage , imageSizeMultiplier );
+				}
+
+				
+			}
+			
+			//add this result to our duckstatemanager so we can retrieve it later on
+			duckStateManager.AddImage( imageresult , currentDuckColor , withhat , DuckStateManager.GetEnumByBools( separate , quack ) );
+			return imageresult;
+		}
+
+		public void UpdateImage( )
+		{
+			this.hatImageBox.Image = GetImage( core.FileInfo != null );
+			this.hatsSmallPictureBox.Image = GetImage( core.FileInfo != null , true , isQuacking );
+
+			/*
+			if ( core.FileInfo != null )
+			{
+				isQuackMode
                 
-                this.hatImageBox.Image = finalDuck;
-                this.hatsSmallPictureBox.Image = finalDuck;
-            }
-        }
+				using (System.IO.MemoryStream ms = new System.IO.MemoryStream(core.FileInfo.TextureData))
+				{
+                    
+					Image oldimg = Image.FromStream( ms );
 
-        public void UpdateForm( bool updateImage = true )
-        {
-            if ( core != null && core.FileInfo != null )
-            {
-                this.hatNameBox.Text = core.FileInfo.HatName;
+					Image img = ResizeImage(oldimg, imageSizeMultiplier);
+
+					oldimg.Dispose();
+
+					Image overlapped = OverlapImages(finalDuck, img, finalDuck.Width, finalDuck.Height);
+
+					img.Dispose();
+
+					this.hatImageBox.Image = overlapped;
+					this.hatsSmallPictureBox.Image = overlapped;
+				}
                 
-                string loaded = "quack.quack";
+			}
+			else
+			{
+                
+				this.hatImageBox.Image = finalDuck;
+				this.hatsSmallPictureBox.Image = finalDuck;
+                
+			}
+			*/
+		}
 
-                if ( core.FileInfo.TexturePath != null )
-                {
-                    loaded = core.FileInfo.TexturePath;
+		public void UpdateForm( bool updateImage = true )
+		{
+			if( core.FileInfo != null )
+			{
+				this.hatNameBox.Text = core.FileInfo.HatName;
+
+				string loaded = "quack.quack";
+
+				if( core.FileInfo.TexturePath != null )
+				{
+					loaded = core.FileInfo.TexturePath;
 					StartWatchingFile( core.FileInfo.TexturePath );
-                }
+				}
 
-                if (core.FileInfo.SavePath != null)
-                {
-                    loaded = core.FileInfo.SavePath;
-                }
+				if( core.FileInfo.SavePath != null )
+				{
+					loaded = core.FileInfo.SavePath;
+				}
 
-                this.Text = basetitle + ": " + System.IO.Path.GetFileName( loaded );
-            }
-            else
-            {
-                this.Text = basetitle + ": No hat";
-                this.hatNameBox.Text = "No hat";
+				this.Text = basetitle + ": " + System.IO.Path.GetFileName( loaded );
+			}
+			else
+			{
+				this.Text = basetitle + ": No hat";
+				this.hatNameBox.Text = "No hat";
 
 				StopWatchingFile();
-            }
+			}
 
-            if (updateImage)
-                UpdateImage();
+			if( updateImage )
+				UpdateImage();
 
-            UpdateMenu();
-        }
+			UpdateMenu();
+		}
 
-        private void UpdateMenu()
-        {
-            if (core == null)
-                return;
+		private void UpdateMenu( )
+		{
+			this.closeToolStripMenuItem.Enabled = core.FileInfo != null;
+			this.savepngAsToolStripMenuItem.Enabled = core.FileInfo != null;
+			this.savehatAsToolStripMenuItem.Enabled = core.FileInfo != null;
+			this.saveToolStripMenuItem.Enabled = core.FileInfo != null;
+		}
 
-            if ( core.FileInfo != null )
-            {
-                this.closeToolStripMenuItem.Enabled = true;
-                this.savepngAsToolStripMenuItem.Enabled = true;
-                this.savehatAsToolStripMenuItem.Enabled = true;
-                this.saveToolStripMenuItem.Enabled = true;
-            }
-            else
-            {
-                this.closeToolStripMenuItem.Enabled = false;
-                this.savepngAsToolStripMenuItem.Enabled = false;
-                this.savehatAsToolStripMenuItem.Enabled = false;
-                this.saveToolStripMenuItem.Enabled = false;
-            }
-        }
+		private Image ResizeImage( Image img , int mult )
+		{
+			if( img == null )
+				return null;
 
-        private Image ResizeImage( Image img, int mult )
-        {
-            if (img == null)
-                return null;
+			Bitmap bigger = new Bitmap( img.Width * mult , img.Height * mult , img.PixelFormat );
+			using( Graphics g = Graphics.FromImage( bigger ) )
+			{
+				
+				g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+				g.DrawImage( img , new Rectangle( Point.Empty , bigger.Size ) );
+				bigger.MakeTransparent( transparencyColor );
+			}
 
-            Image ret;
-            using (Bitmap bigger = new Bitmap(img.Width * mult, img.Height * mult, img.PixelFormat))
-            using (Graphics g = Graphics.FromImage(bigger))
-            {
-                Color tc = Color.FromArgb( 255 , 255, 0, 255);
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-                g.DrawImage(img, new Rectangle(Point.Empty, bigger.Size));
-                bigger.MakeTransparent(tc);
-                ret = (Image)bigger.Clone();
-            }
-            return ret;
-        }
+			return bigger;
+		}
 
-        private Image OverlapImages( Image img1 , Image img2 , int w, int h )
-        {
-            Image ret;
+		private Image OverlapImages( Image img1 , Image img2 , int w , int h )
+		{
+			Image ret;
 
-            using ( Bitmap overlapped = new Bitmap( w , h , img1.PixelFormat ))
-            using ( Graphics g = Graphics.FromImage(overlapped) )
-            {
-                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-                g.DrawImage(img1, new Rectangle(Point.Empty, img1.Size));
+			using( Bitmap overlapped = new Bitmap( w , h , img1.PixelFormat ) )
+			using( Graphics g = Graphics.FromImage( overlapped ) )
+			{
+				g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
+				g.DrawImage( img1 , new Rectangle( Point.Empty , img1.Size ) );
 
-                g.DrawImage(img2, new Rectangle(Point.Empty, img2.Size));
-                ret = (Image)overlapped.Clone();
-            }
+				g.DrawImage( img2 , new Rectangle( Point.Empty , img2.Size ) );
+				ret = ( Image )overlapped.Clone();
+			}
 
-            return ret;
-        }
+			return ret;
+		}
 
-        void LoadDuckParts()
-        {
-            System.Reflection.Assembly myAssembly = System.Reflection.Assembly.GetExecutingAssembly();
-            
-            //only need to load this once
-            if( noColorDuck == null )
-            {
-                System.IO.Stream noColorStream = myAssembly.GetManifestResourceStream("DuckGameHatCompiler.EmbeddedResources.baseduck_nocolor.png");
-                Image img = Image.FromStream(noColorStream);
-                noColorDuck = ResizeImage(img, imageSizeMultiplier);
-                img.Dispose();
-            }
+		Image GetDuck( )
+		{
+			Bitmap result = new Bitmap( 64 , 32 );
 
-            if ( colorDuck != null )
-            {
-                colorDuck.Dispose();
-                colorDuck = null;
-            }
+			System.Reflection.Assembly myAssembly = System.Reflection.Assembly.GetExecutingAssembly();
 
-            System.IO.Stream ColorStream = myAssembly.GetManifestResourceStream("DuckGameHatCompiler.EmbeddedResources.baseduck_color.png");
-            Image cimg = Image.FromStream(ColorStream);
-            colorDuck = ResizeImage(cimg, imageSizeMultiplier);
-            cimg.Dispose();
-        }
-
-        private void ChangeDuckColor( Color newColor )
-        {
-            lastColor = newColor;
-
-            LoadDuckParts();
-
-            if (noColorDuck == null || colorDuck == null)
-                return;
-
-            if ( finalDuck != null )
-            {
-                finalDuck.Dispose();
-                finalDuck = null;
-            }
-
-            finalDuck = new Bitmap(64 * imageSizeMultiplier, 32 * imageSizeMultiplier);
-
-            float[][] colorMatrixElements = { 
-               new float[] { newColor.R / 255f, 0 , 0,  0, 0},        // red scaling factor of 2 
-               new float[] { 0,  newColor.G / 255f,  0,  0, 0},        // green scaling factor of 1 
-               new float[] { 0,  0,  newColor.B / 255f,  0, 0},        // blue scaling factor of 1 
-               new float[] { 0,  0,  0,  1, 1},        // alpha scaling factor of 1 
-               new float[] { 0, 0, 0, 0, 0}
+			float[][] colorMatrixElements = { 
+                new float[] { currentDuckColor.R / 255f, 0 , 0,  0, 0},        // red scaling factor of 2 
+                new float[] { 0,  currentDuckColor.G / 255f,  0,  0, 0},        // green scaling factor of 1 
+                new float[] { 0,  0,  currentDuckColor.B / 255f,  0, 0},        // blue scaling factor of 1 
+                new float[] { 0,  0,  0,  1, 1},        // alpha scaling factor of 1 
+                new float[] { 0, 0, 0, 0, 0}
             };
 
-            System.Drawing.Imaging.ColorMatrix colorMatrix = new System.Drawing.Imaging.ColorMatrix(colorMatrixElements);
+			System.Drawing.Imaging.ColorMatrix colorMatrix = new System.Drawing.Imaging.ColorMatrix( colorMatrixElements );
 
-            System.Drawing.Imaging.ImageAttributes attr = new System.Drawing.Imaging.ImageAttributes();
+			System.Drawing.Imaging.ImageAttributes attr = new System.Drawing.Imaging.ImageAttributes();
 
-            attr.SetColorMatrix(
-               colorMatrix,
-               System.Drawing.Imaging.ColorMatrixFlag.Default,
-               System.Drawing.Imaging.ColorAdjustType.Bitmap);
+			attr.SetColorMatrix(
+			   colorMatrix ,
+			   System.Drawing.Imaging.ColorMatrixFlag.Default ,
+			   System.Drawing.Imaging.ColorAdjustType.Bitmap );
 
-            //draw in two separate passes, otherwise the attributes will affect the original image too
-            using (Graphics g = Graphics.FromImage(finalDuck))
-            {
-                g.DrawImage(noColorDuck, new Rectangle(Point.Empty, noColorDuck.Size));
-            }
+			using( System.IO.Stream noColorStream = myAssembly.GetManifestResourceStream( "DuckGameHatCompiler.EmbeddedResources.baseduck_nocolor.png" ) )
+			using( System.IO.Stream colorStream = myAssembly.GetManifestResourceStream( "DuckGameHatCompiler.EmbeddedResources.baseduck_color.png" ) )
+			using( Image baseDuck = Image.FromStream( noColorStream ) )
+			using( Image colorDuck = Image.FromStream( colorStream ) )
+			{
+				//separate the two, as unfortunately the same draw call will also be affected by the attribute
+				using( Graphics g = Graphics.FromImage( result ) )
+				{
+					g.DrawImage( baseDuck , new Rectangle( Point.Empty , result.Size ) );
+				}
 
-            using (Graphics g = Graphics.FromImage(finalDuck))
-            {
-                g.DrawImage(colorDuck, new Rectangle(Point.Empty, colorDuck.Size), 0, 0, colorDuck.Width, colorDuck.Height, GraphicsUnit.Pixel, attr);
-            }
+				using( Graphics g = Graphics.FromImage( result ) )
+				{
+					g.DrawImage( colorDuck , new Rectangle( Point.Empty , colorDuck.Size ) , 0 , 0 , result.Width , result.Height , GraphicsUnit.Pixel , attr );
+				}
+			}
 
-            UpdateImage();
-        }
+			return result;
+		}
 
-        
-        
-        private void openpngToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (core == null)
-                return;
+		private void ChangeDuckColor( Color newColor )
+		{
+			currentDuckColor = newColor;
+			UpdateImage();
+
+			/*
+
+           
             
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Hat files or PNG (.hat)|*.hat;*.png";
-            openFileDialog.FilterIndex = 1;
-            openFileDialog.CheckFileExists = true;
-            openFileDialog.Multiselect = false;
 
-            DialogResult res = openFileDialog.ShowDialog();
+			if (noColorDuck == null || colorDuck == null)
+				return;
 
-            if (res == DialogResult.OK)
-            {
-                core.OpenFile(openFileDialog.FileName);
-            }
+			if ( finalDuck != null )
+			{
+				finalDuck.Dispose();
+				finalDuck = null;
+			}
 
-            UpdateForm();
-        }
+			finalDuck = new Bitmap(64 * imageSizeMultiplier, 32 * imageSizeMultiplier);
 
-        private void closeToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (core == null || core.FileInfo == null )
-                return;
+			float[][] colorMatrixElements = { 
+			   new float[] { newColor.R / 255f, 0 , 0,  0, 0},        // red scaling factor of 2 
+			   new float[] { 0,  newColor.G / 255f,  0,  0, 0},        // green scaling factor of 1 
+			   new float[] { 0,  0,  newColor.B / 255f,  0, 0},        // blue scaling factor of 1 
+			   new float[] { 0,  0,  0,  1, 1},        // alpha scaling factor of 1 
+			   new float[] { 0, 0, 0, 0, 0}
+			};
 
-            if ( !core.CloseCurrent() )
-            {
-                DialogResult res = MessageBox.Show("Do you want to save changes to " + core.FileInfo.HatName + "?", "Save alert", MessageBoxButtons.YesNo);
-                
-                //we can try saving automatically the changes without showing another save dialog
-                if ( res == System.Windows.Forms.DialogResult.Yes )
-                {
-                    saveToolStripMenuItem_Click(sender, e);
-                }
+			System.Drawing.Imaging.ColorMatrix colorMatrix = new System.Drawing.Imaging.ColorMatrix(colorMatrixElements);
 
-                core.CloseCurrent( true );
-            }
+			System.Drawing.Imaging.ImageAttributes attr = new System.Drawing.Imaging.ImageAttributes();
 
-            UpdateForm();
-        }
+			attr.SetColorMatrix(
+			   colorMatrix,
+			   System.Drawing.Imaging.ColorMatrixFlag.Default,
+			   System.Drawing.Imaging.ColorAdjustType.Bitmap);
 
-        private void savehatAsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (core == null)
-                return;
+			//draw in two separate passes, otherwise the attributes will affect the original image too
+			using (Graphics g = Graphics.FromImage(finalDuck))
+			{
+				g.DrawImage(noColorDuck, new Rectangle(Point.Empty, noColorDuck.Size));
+			}
 
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.AddExtension = true;
-            saveFileDialog.OverwritePrompt = true;
-            saveFileDialog.DefaultExt = ".hat";
-            saveFileDialog.Filter = "Hat files (.hat)|*.hat";
-            saveFileDialog.FilterIndex = 1;
+			using (Graphics g = Graphics.FromImage(finalDuck))
+			{
+				g.DrawImage(colorDuck, new Rectangle(Point.Empty, colorDuck.Size), 0, 0, colorDuck.Width, colorDuck.Height, GraphicsUnit.Pixel, attr);
+			}
 
-            DialogResult res = saveFileDialog.ShowDialog();
-            if ( res == DialogResult.OK )
-            {
-                core.SaveHat( saveFileDialog.FileName);
-            }
-            UpdateForm(false);
-        }
-
-        private void savepngAsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (core == null)
-                return;
-
-            SaveFileDialog saveFileDialog = new SaveFileDialog();
-            saveFileDialog.AddExtension = true;
-            saveFileDialog.DefaultExt = ".png";
-            saveFileDialog.OverwritePrompt = true;
-            saveFileDialog.Filter = "PNG file (.png)|*.png";
-            saveFileDialog.FilterIndex = 1;
-
-            DialogResult res = saveFileDialog.ShowDialog();
-            if (res == DialogResult.OK)
-            {
-                core.SavePNG(saveFileDialog.FileName);
-            }
-            UpdateForm(false);
-        }
-
-        private void menuStrip1_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-
-        }
-
-        private void pictureBox1_Click_1(object sender, EventArgs e)
-        {
-
-        }
+			UpdateImage();
+			*/
+		}
 
 
-        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            using( AboutThisToolBox aboutbox = new AboutThisToolBox() )
-            {
-                aboutbox.ShowDialog(this);
-            }
-        }
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
-        {
-            if ( core != null && core.FileInfo != null )
-            {
-                core.FileInfo.HatName = hatNameBox.Text;
-                core.FileInfo.Saved = false;
-                UpdateForm( false );
-            }
-        }
+		private void openpngToolStripMenuItem_Click( object sender , EventArgs e )
+		{
+			OpenFileDialog openFileDialog = new OpenFileDialog();
+			openFileDialog.Filter = "Hat files or PNG (.hat)|*.hat;*.png";
+			openFileDialog.FilterIndex = 1;
+			openFileDialog.CheckFileExists = true;
+			openFileDialog.Multiselect = false;
 
-        private void yellowDuckButton_CheckedChanged(object sender, EventArgs e)
-        {
-            ChangeDuckColor(duckColors[2]);
-        }
+			DialogResult res = openFileDialog.ShowDialog();
+
+			if( res == DialogResult.OK )
+			{
+				core.OpenFile( openFileDialog.FileName );
+			}
+
+			UpdateForm();
+		}
+
+		private void closeToolStripMenuItem_Click( object sender , EventArgs e )
+		{
+			if( core.FileInfo == null )
+				return;
+
+			if( !core.CloseCurrent() )
+			{
+				DialogResult res = MessageBox.Show( "Do you want to save changes to " + core.FileInfo.HatName + "?" , "Save alert" , MessageBoxButtons.YesNo );
+
+				//we can try saving automatically the changes without showing another save dialog
+				if( res == System.Windows.Forms.DialogResult.Yes )
+				{
+					saveToolStripMenuItem_Click( sender , e );
+				}
+
+				core.CloseCurrent( true );
+			}
+
+			UpdateForm();
+		}
+
+		private void savehatAsToolStripMenuItem_Click( object sender , EventArgs e )
+		{
+
+			SaveFileDialog saveFileDialog = new SaveFileDialog();
+			saveFileDialog.AddExtension = true;
+			saveFileDialog.OverwritePrompt = true;
+			saveFileDialog.DefaultExt = ".hat";
+			saveFileDialog.Filter = "Hat files (.hat)|*.hat";
+			saveFileDialog.FilterIndex = 1;
+
+			DialogResult res = saveFileDialog.ShowDialog();
+			if( res == DialogResult.OK )
+			{
+				core.SaveHat( saveFileDialog.FileName );
+			}
+			UpdateForm( false );
+		}
+
+		private void savepngAsToolStripMenuItem_Click( object sender , EventArgs e )
+		{
+			SaveFileDialog saveFileDialog = new SaveFileDialog();
+			saveFileDialog.AddExtension = true;
+			saveFileDialog.DefaultExt = ".png";
+			saveFileDialog.OverwritePrompt = true;
+			saveFileDialog.Filter = "PNG file (.png)|*.png";
+			saveFileDialog.FilterIndex = 1;
+
+			DialogResult res = saveFileDialog.ShowDialog();
+			if( res == DialogResult.OK )
+			{
+				core.SavePNG( saveFileDialog.FileName );
+			}
+			UpdateForm( false );
+		}
+
+		private void menuStrip1_ItemClicked( object sender , ToolStripItemClickedEventArgs e )
+		{
+
+		}
+
+		private void pictureBox1_Click_1( object sender , EventArgs e )
+		{
+
+		}
 
 
-        private void whiteDuckButton_CheckedChanged(object sender, EventArgs e)
-        {
-            ChangeDuckColor(duckColors[0]);
-        }
+		private void aboutToolStripMenuItem_Click( object sender , EventArgs e )
+		{
+			using( AboutThisToolBox aboutbox = new AboutThisToolBox() )
+			{
+				aboutbox.ShowDialog( this );
+			}
+		}
 
-        private void orangeDuckButton_CheckedChanged(object sender, EventArgs e)
-        {
-            ChangeDuckColor(duckColors[3]);
-        }
+		private void textBox1_TextChanged( object sender , EventArgs e )
+		{
+			if( core.FileInfo != null )
+			{
+				core.FileInfo.HatName = hatNameBox.Text;
+				core.FileInfo.Saved = false;
+				UpdateForm( false );
+			}
+		}
 
-        private void grayDuckButton_CheckedChanged(object sender, EventArgs e)
-        {
-            ChangeDuckColor(duckColors[1]);
-        }
-
-        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            if (core == null || core.FileInfo == null)
-                return;
-
-            //this file has been saved before, save right away
-            if ( core.FileInfo.SavePath != null )
-            {
-                core.SaveHat(core.FileInfo.SavePath);
-            }
-            else
-            {
-                savehatAsToolStripMenuItem_Click(sender, e);
-            }
-
-            UpdateForm(false);
-        }
-
-        private void hatsPictureBox_Click(object sender, EventArgs e)
-        {
-            if ( quackPlayer != null )
-            {
-                quackPlayer.Play();
-            }
-
-            if (this.hatsSmallPictureBox.Image != null )
-            {
-                Image old = this.hatsSmallPictureBox.Image;
-                this.hatsSmallPictureBox.Image = ((Bitmap)old).Clone(new Rectangle(128, 0, 128, 128), old.PixelFormat);
-                old.Dispose();
-            }
-        }
-
-        private void hatsPictureBox_ReleaseClick( object sender, EventArgs e)
-        {
-            if (finalDuck != null)
-            {
-                finalDuck.Dispose();
-                finalDuck = null;
-            }
-            UpdateImage();
-        }
+		private void yellowDuckButton_CheckedChanged( object sender , EventArgs e )
+		{
+			ChangeDuckColor( duckColors[2] );
+		}
 
 
-        private void quackMode_CheckedChanged(object sender, EventArgs e)
-        {
-            this.hatsSmallPictureBox.Visible = this.quackMode.Checked;
-            this.hatImageBox.Visible = !this.quackMode.Checked;
-        }
+		private void whiteDuckButton_CheckedChanged( object sender , EventArgs e )
+		{
+			ChangeDuckColor( duckColors[0] );
+		}
 
-        
-    }
+		private void orangeDuckButton_CheckedChanged( object sender , EventArgs e )
+		{
+			ChangeDuckColor( duckColors[3] );
+		}
+
+		private void grayDuckButton_CheckedChanged( object sender , EventArgs e )
+		{
+			ChangeDuckColor( duckColors[1] );
+		}
+
+		private void saveToolStripMenuItem_Click( object sender , EventArgs e )
+		{
+			if( core.FileInfo == null )
+				return;
+
+			//this file has been saved before, save right away
+			if( core.FileInfo.SavePath != null )
+			{
+				core.SaveHat( core.FileInfo.SavePath );
+			}
+			else
+			{
+				savehatAsToolStripMenuItem_Click( sender , e );
+			}
+
+			UpdateForm( false );
+		}
+
+		private void hatsPictureBox_Click( object sender , EventArgs e )
+		{
+			if( quackPlayer != null )
+			{
+				quackPlayer.Play();
+			}
+			isQuacking = true;
+			UpdateImage();
+			/*
+			if (this.hatsSmallPictureBox.Image != null )
+			{
+				Image old = this.hatsSmallPictureBox.Image;
+				this.hatsSmallPictureBox.Image = ((Bitmap)old).Clone(new Rectangle(128, 0, 128, 128), old.PixelFormat);
+				old.Dispose();
+			}
+			*/
+		}
+
+		private void hatsPictureBox_ReleaseClick( object sender , EventArgs e )
+		{
+			isQuacking = false;
+			UpdateImage();
+		}
+
+
+		private void quackMode_CheckedChanged( object sender , EventArgs e )
+		{
+			this.hatsSmallPictureBox.Visible = this.quackMode.Checked;
+			this.hatImageBox.Visible = !this.quackMode.Checked;
+		}
+
+
+	}
 }

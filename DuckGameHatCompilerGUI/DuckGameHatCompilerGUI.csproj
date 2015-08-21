@@ -78,6 +78,7 @@
     <Compile Include="AboutThisToolBox.Designer.cs">
       <DependentUpon>AboutThisToolBox.cs</DependentUpon>
     </Compile>
+    <Compile Include="DuckState.cs" />
     <Compile Include="MainUIForm.cs">
       <SubType>Form</SubType>
     </Compile>
