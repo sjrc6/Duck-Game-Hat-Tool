@@ -10,6 +10,17 @@ using System.Text;
 
 namespace DuckGameHatCompiler
 {
+	public enum ImageError
+	{
+		None = 0 ,
+		TooBig ,		//exceeds ProgramCore.max h/w
+		TooSmall ,			//other way around
+		NotLoaded,			//it isn't loaded yo
+		NotPng ,			//not a png?
+		Corrupted ,			//garbled f%£$)($£
+		FileSizeTooBig		//exceeds ProgramCore.maxImageSize
+	}
+
 	public class CurrentFileInfo
 	{
 		//TODO: is the encryption initialization vector really that important to store? we can always use a static one in case
@@ -107,10 +118,18 @@ namespace DuckGameHatCompiler
 
 	public class ProgramCore
 	{
-		protected CurrentFileInfo fileInfo;
+		public static int maxHeight = 32;
+		public static int minHeight = 32;
 
-		//straight from duck game's sourcecode
-		byte[] securityKey = new byte[]
+		public static int maxWidth = 64;
+		public static int minWidth = 32;
+
+		protected CurrentFileInfo fileInfo;
+		private static int maxImageSize = 8 * 1024;	//not gonna enforce it yet
+		//straight from duck game's source code
+
+		//TODO: read straight from duckgame's exe with mono.cecil?
+		private static byte[] securityKey = new byte[]
 		{
 			243,
 			22,
@@ -130,7 +149,8 @@ namespace DuckGameHatCompiler
 			230
 		};
 
-		private long duckgameversioncheck = 402965919293045L;
+		//TODO: read straight from duckgame's exe with mono.cecil?
+		private static long duckgameversioncheck = 402965919293045L;
 
 		public CurrentFileInfo FileInfo
 		{
@@ -151,7 +171,6 @@ namespace DuckGameHatCompiler
 
 		public bool CloseCurrent( bool forced = false )
 		{
-
 			if( this.FileInfo != null && !forced )
 			{
 				if( !this.FileInfo.Saved )
@@ -278,12 +297,44 @@ namespace DuckGameHatCompiler
 			return fi;
 		}
 
+		//should we embed this into OpenFile? we would need exceptions to communicate with whoever calls that function
+		public ImageError IsImageValid()
+		{
+			if( FileInfo == null || FileInfo.TextureData == null )
+			{
+				return ImageError.NotLoaded;
+			}
+
+			if( FileInfo.TextureData.Length > ProgramCore.maxImageSize )
+			{
+				return ImageError.FileSizeTooBig;
+			}
+			
+			using( MemoryStream stream = new MemoryStream( FileInfo.TextureData ) )
+			using( System.Drawing.Image img = System.Drawing.Image.FromStream( stream ) )
+			{
+				if( !System.Drawing.Imaging.ImageFormat.Png.Equals( img.RawFormat ) )
+				{
+					return ImageError.NotPng;
+				}
+				
+				if( img.Height > ProgramCore.maxHeight || img.Width > ProgramCore.maxWidth )
+				{
+					return ImageError.TooBig;
+				}
+
+				if( img.Height < ProgramCore.minHeight || img.Width < ProgramCore.minWidth )
+				{
+					return ImageError.TooSmall;
+				}
+			}
+
+			return ImageError.None;
+		}
+
 		//used by the saving system, this will still need to be saved manually though
 		byte[] EncryptHat( CurrentFileInfo fi )
 		{
-			
-			byte[] array = null;
-
 			using( MemoryStream ms = new MemoryStream() )
 			using( MemoryStream unencryptedStream = new MemoryStream() )
 			using( BinaryWriter writer = new BinaryWriter( unencryptedStream ) )
@@ -293,39 +344,39 @@ namespace DuckGameHatCompiler
 				writer.Write( ( Int32 )fi.TextureData.Length );
 				writer.Write( fi.TextureData , 0 , fi.TextureData.Length );
 
+				//get the security key in bytes
 				byte[] ivbytes = Encoding.ASCII.GetBytes( fi.IV );
 
 				System.Security.Cryptography.RijndaelManaged rijndaelManaged = new System.Security.Cryptography.RijndaelManaged();
-				rijndaelManaged.Key = this.securityKey;
+				rijndaelManaged.Key = ProgramCore.securityKey;
 				rijndaelManaged.IV = ivbytes;
 
 				//DON'T BE CONFUSED, we're reusing this variable before we encrypt what's in it
-				byte[] result = unencryptedStream.ToArray();
+				byte[] process = unencryptedStream.ToArray();
+				byte[] result = null;
 
 				using( MemoryStream tempms = new MemoryStream() )
 				using( CryptoStream cs = new CryptoStream( tempms , rijndaelManaged.CreateEncryptor( rijndaelManaged.Key , rijndaelManaged.IV ) , CryptoStreamMode.Write ) )
 				{
-					cs.Write( result , 0 , result.Length );
+					cs.Write( process , 0 , process.Length );
 					cs.FlushFinalBlock();
 					result = tempms.ToArray();
 				}
 
 				//couldn't encrypt for some reason??? in that case the cryptostream might have thrown an exception
-				if( result.Length > 1 )
+				if( result != null && result.Length > 1 )
 				{
 					byte[] IVLENGTH = BitConverter.GetBytes( ivbytes.Length );
 
 					ms.Write( IVLENGTH , 0 , IVLENGTH.Length );
-
 					ms.Write( ivbytes , 0 , ivbytes.Length );
-
 					ms.Write( result , 0 , result.Length );
 
-					array = ms.ToArray();
+					return ms.ToArray();
 				}
 			}
-			
-			return array;
+
+			return null;
 		}
 
 		//used by the loading system, ideally it'd return a CurrentFileInfo, null if it fails
@@ -353,7 +404,7 @@ namespace DuckGameHatCompiler
 			}
 
 			System.Security.Cryptography.RijndaelManaged rijndaelManaged = new System.Security.Cryptography.RijndaelManaged();
-			rijndaelManaged.Key = this.securityKey;
+			rijndaelManaged.Key = ProgramCore.securityKey;
 			rijndaelManaged.IV = iv;
 
 			using( ICryptoTransform decryptor = rijndaelManaged.CreateDecryptor( rijndaelManaged.Key , rijndaelManaged.IV ) )
@@ -361,11 +412,15 @@ namespace DuckGameHatCompiler
 			using( System.IO.BinaryReader binaryReader = new System.IO.BinaryReader( input ) )
 			{
 				long versionnum = binaryReader.ReadInt64();
-				if( versionnum == this.duckgameversioncheck )
+				if( versionnum == ProgramCore.duckgameversioncheck )
 				{
 					fi.HatName = binaryReader.ReadString();
 					int texLen = binaryReader.ReadInt32();
 					fi.TextureData = binaryReader.ReadBytes( texLen );
+				}
+				else
+				{
+					return null;
 				}
 			}
 

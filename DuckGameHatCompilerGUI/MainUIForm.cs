@@ -13,9 +13,7 @@ namespace DuckGameHatCompiler
 	public partial class DGHC_MainForm : Form
 	{
 		private ProgramCore core;
-
 		private string basetitle = "Duck Game Hat Tool";
-
 		private static Color[] duckColors = new Color[]
         {
             Color.FromArgb( 255 , 255 , 255 , 255 ),
@@ -23,39 +21,16 @@ namespace DuckGameHatCompiler
             Color.FromArgb( 255 , 247, 224, 90),
             Color.FromArgb( 205, 107, 29)
         };
-
 		private static Color transparencyColor = Color.FromArgb( 255 , 255 , 0 , 255 );
-
 		private Color currentDuckColor;
-
-		public bool isQuackMode
-		{
-			get
-			{
-				return this.quackMode.Checked;
-			}
-		}
-
 		public bool isQuacking;
-
 		private System.IO.FileSystemWatcher watcher;	//but who watches the watchmen?
 		private System.Media.SoundPlayer quackPlayer;
-
 		private int imageSizeMultiplier;
-
 		private bool acceptCurrentDrop;
-		private bool enableWatcher = false; //TODO: config
+		private bool enableWatcher = true; //TODO: config
 		private List<string> processFiles = new List<String>();
-
-
-		/* 
-		 * 0 = 64x32 image of the duck
-		 * 1 = 32x32 image of the duck not quacking
-		 * 2 = 32x32 image of the duck quacking
-		 */
-
 		private DuckStateManager duckStateManager = new DuckStateManager();	
-			
 		
 		public DGHC_MainForm( ProgramCore mycore , string[] programargs )
 		{
@@ -76,7 +51,7 @@ namespace DuckGameHatCompiler
 			//drag and drop support
 			this.DragEnter += new DragEventHandler( FileDragEnter );
 			this.DragDrop += new DragEventHandler( FileDragDrop );
-
+			this.FormClosing += new FormClosingEventHandler( AboutToCloseMe );
 			//quack box
 			this.hatsSmallPictureBox.MouseDown += new System.Windows.Forms.MouseEventHandler( this.hatsPictureBox_Click );
 			this.hatsSmallPictureBox.MouseUp += new System.Windows.Forms.MouseEventHandler( this.hatsPictureBox_ReleaseClick );
@@ -89,12 +64,25 @@ namespace DuckGameHatCompiler
 			}
 		}
 
+		//we're about to be closed, ask the user if he wants to save us
+		//actually, for the scope of this program, does it really matter? he can drag an image on top of the form again in like half a second
+		//it's not really that big of a deal
+		private void AboutToCloseMe( object sender , FormClosingEventArgs e )
+		{
+			/*
+			if( core.FileInfo != null && e.CloseReason == CloseReason.UserClosing )
+			{
+				closeToolStripMenuItem_Click( sender , e );
+			}
+			*/
+		}
+
 		private void Form1_Load( object sender , EventArgs e )
 		{
 			ChangeDuckColor( duckColors[0] );
 			whiteDuckButton.Checked = true;
 			this.quackMode.Checked = false;
-			UpdateForm();
+			UpdateForm( false );
 
 			System.Reflection.Assembly myAssembly = System.Reflection.Assembly.GetExecutingAssembly();
 			System.IO.Stream quackSoundStream = myAssembly.GetManifestResourceStream( "DuckGameHatCompiler.EmbeddedResources.quack.wav" );
@@ -119,6 +107,7 @@ namespace DuckGameHatCompiler
 				watcher.Path = System.IO.Path.GetDirectoryName( abspath );
 				watcher.Filter = System.IO.Path.GetFileName( abspath );
 				watcher.EnableRaisingEvents = true;
+				watcher.NotifyFilter = NotifyFilters.LastWrite;
 			}
 		}
 
@@ -134,11 +123,12 @@ namespace DuckGameHatCompiler
 
 		void OnPNGFileChanged( object source , FileSystemEventArgs e )
 		{
-			if( e.ChangeType != WatcherChangeTypes.Changed )
+			//file was written to but doesn't exist in the folder we were tracking anymore, don't bother
+			if( !System.IO.File.Exists( e.FullPath ) )
 				return;
 
 			core.OpenFile( e.FullPath , true );
-
+			UpdateForm();
 		}
 
 		void FileDragEnter( object sender , DragEventArgs e )
@@ -182,7 +172,7 @@ namespace DuckGameHatCompiler
 		Image GetImage( bool withhat = true , bool separate = false , bool quack = false )
 		{
 			
-			//check if this hat was already cached with this color and hat, otherwise dispose of them
+			//check if this image was already cached with this color and hat, otherwise dispose of them
 			
 			Image imageresult = duckStateManager.GetImage( withhat , currentDuckColor , separate , quack );
 
@@ -217,7 +207,7 @@ namespace DuckGameHatCompiler
 
 							if( hat.Width <= 32 )
 							{
-								rect.X = -32;
+								rect.X = 32;
 								g.DrawImage( hat , rect );
 							}
 
@@ -244,6 +234,7 @@ namespace DuckGameHatCompiler
 						g.DrawImage( workingimage , rect );
 					}
 
+					
 					imageresult = ResizeImage( halfimage , imageSizeMultiplier );
 				}
 				else
@@ -263,38 +254,6 @@ namespace DuckGameHatCompiler
 		{
 			this.hatImageBox.Image = GetImage( core.FileInfo != null );
 			this.hatsSmallPictureBox.Image = GetImage( core.FileInfo != null , true , isQuacking );
-
-			/*
-			if ( core.FileInfo != null )
-			{
-				isQuackMode
-                
-				using (System.IO.MemoryStream ms = new System.IO.MemoryStream(core.FileInfo.TextureData))
-				{
-                    
-					Image oldimg = Image.FromStream( ms );
-
-					Image img = ResizeImage(oldimg, imageSizeMultiplier);
-
-					oldimg.Dispose();
-
-					Image overlapped = OverlapImages(finalDuck, img, finalDuck.Width, finalDuck.Height);
-
-					img.Dispose();
-
-					this.hatImageBox.Image = overlapped;
-					this.hatsSmallPictureBox.Image = overlapped;
-				}
-                
-			}
-			else
-			{
-                
-				this.hatImageBox.Image = finalDuck;
-				this.hatsSmallPictureBox.Image = finalDuck;
-                
-			}
-			*/
 		}
 
 		public void UpdateForm( bool updateImage = true )
@@ -327,8 +286,13 @@ namespace DuckGameHatCompiler
 			}
 
 			if( updateImage )
+			{
+				//when we call to this, we always have new data to load, so it's sensible to cleanup the duck state cache
+				//since when we want to simply update the image displayed, we'll call UpdateImage() directly
+				//but this is called when all data is changed
+				duckStateManager.Cleanup();
 				UpdateImage();
-
+			}
 			UpdateMenu();
 		}
 
@@ -421,53 +385,6 @@ namespace DuckGameHatCompiler
 		{
 			currentDuckColor = newColor;
 			UpdateImage();
-
-			/*
-
-           
-            
-
-			if (noColorDuck == null || colorDuck == null)
-				return;
-
-			if ( finalDuck != null )
-			{
-				finalDuck.Dispose();
-				finalDuck = null;
-			}
-
-			finalDuck = new Bitmap(64 * imageSizeMultiplier, 32 * imageSizeMultiplier);
-
-			float[][] colorMatrixElements = { 
-			   new float[] { newColor.R / 255f, 0 , 0,  0, 0},        // red scaling factor of 2 
-			   new float[] { 0,  newColor.G / 255f,  0,  0, 0},        // green scaling factor of 1 
-			   new float[] { 0,  0,  newColor.B / 255f,  0, 0},        // blue scaling factor of 1 
-			   new float[] { 0,  0,  0,  1, 1},        // alpha scaling factor of 1 
-			   new float[] { 0, 0, 0, 0, 0}
-			};
-
-			System.Drawing.Imaging.ColorMatrix colorMatrix = new System.Drawing.Imaging.ColorMatrix(colorMatrixElements);
-
-			System.Drawing.Imaging.ImageAttributes attr = new System.Drawing.Imaging.ImageAttributes();
-
-			attr.SetColorMatrix(
-			   colorMatrix,
-			   System.Drawing.Imaging.ColorMatrixFlag.Default,
-			   System.Drawing.Imaging.ColorAdjustType.Bitmap);
-
-			//draw in two separate passes, otherwise the attributes will affect the original image too
-			using (Graphics g = Graphics.FromImage(finalDuck))
-			{
-				g.DrawImage(noColorDuck, new Rectangle(Point.Empty, noColorDuck.Size));
-			}
-
-			using (Graphics g = Graphics.FromImage(finalDuck))
-			{
-				g.DrawImage(colorDuck, new Rectangle(Point.Empty, colorDuck.Size), 0, 0, colorDuck.Width, colorDuck.Height, GraphicsUnit.Pixel, attr);
-			}
-
-			UpdateImage();
-			*/
 		}
 
 
@@ -575,25 +492,22 @@ namespace DuckGameHatCompiler
 			}
 		}
 
-		private void yellowDuckButton_CheckedChanged( object sender , EventArgs e )
-		{
-			ChangeDuckColor( duckColors[2] );
-		}
-
-
 		private void whiteDuckButton_CheckedChanged( object sender , EventArgs e )
 		{
 			ChangeDuckColor( duckColors[0] );
 		}
-
-		private void orangeDuckButton_CheckedChanged( object sender , EventArgs e )
-		{
-			ChangeDuckColor( duckColors[3] );
-		}
-
 		private void grayDuckButton_CheckedChanged( object sender , EventArgs e )
 		{
 			ChangeDuckColor( duckColors[1] );
+		}
+
+		private void yellowDuckButton_CheckedChanged( object sender , EventArgs e )
+		{
+			ChangeDuckColor( duckColors[2] );
+		}
+		private void orangeDuckButton_CheckedChanged( object sender , EventArgs e )
+		{
+			ChangeDuckColor( duckColors[3] );
 		}
 
 		private void saveToolStripMenuItem_Click( object sender , EventArgs e )
@@ -622,14 +536,6 @@ namespace DuckGameHatCompiler
 			}
 			isQuacking = true;
 			UpdateImage();
-			/*
-			if (this.hatsSmallPictureBox.Image != null )
-			{
-				Image old = this.hatsSmallPictureBox.Image;
-				this.hatsSmallPictureBox.Image = ((Bitmap)old).Clone(new Rectangle(128, 0, 128, 128), old.PixelFormat);
-				old.Dispose();
-			}
-			*/
 		}
 
 		private void hatsPictureBox_ReleaseClick( object sender , EventArgs e )

@@ -6,6 +6,12 @@ using System.Text;
 
 namespace DuckGameHatCompiler
 {
+
+	/* 
+	 * IDLEFULL = 64x32 image of the duck
+	 * IDLEHALF = 32x32 image of the duck not quacking
+	 * QUACKHALF = 32x32 image of the duck quacking
+	 */
 	public enum DuckStateEnum
 	{
 		IDLEFULL = 0 ,
@@ -87,9 +93,6 @@ namespace DuckGameHatCompiler
 
 		public void Cleanup( )
 		{
-			if( states.Values.Count < 3 )
-				return;
-
 			foreach( KeyValuePair<DuckStateEnum , DuckState> it in states )
 			{
 				DuckState state = it.Value;
