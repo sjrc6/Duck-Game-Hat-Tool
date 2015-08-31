@@ -123,9 +123,15 @@ namespace DuckGameHatCompiler
 
 		void OnPNGFileChanged( object source , FileSystemEventArgs e )
 		{
+			if( e == null || e.FullPath == null || e.Name == null )
+				return;
+
 			//file was written to but doesn't exist in the folder we were tracking anymore, don't bother
 			if( !System.IO.File.Exists( e.FullPath ) )
+			{
+				StopWatchingFile();
 				return;
+			}
 
 			core.OpenFile( e.FullPath , true );
 			UpdateForm();
@@ -145,7 +151,7 @@ namespace DuckGameHatCompiler
 				}
 				else
 				{
-					e.Effect = DragDropEffects.Copy;
+					e.Effect = DragDropEffects.Move;
 					acceptCurrentDrop = true;
 				}
 			}
@@ -182,8 +188,8 @@ namespace DuckGameHatCompiler
 				return imageresult;
 			}
 
-			using( Bitmap workingimage = new Bitmap( 64 , 32 ) )
-			using( Bitmap halfimage = new Bitmap( 32 , 32 ) )
+			using( Bitmap workingimage = new Bitmap( ProgramCore.maxWidth , ProgramCore.maxHeight ) )
+			using( Bitmap halfimage = new Bitmap( ProgramCore.minWidth , ProgramCore.minHeight ) )
 			using( Image duck = GetDuck() )
 			{
 				using( Graphics g = Graphics.FromImage( workingimage ) )
@@ -205,9 +211,9 @@ namespace DuckGameHatCompiler
 							
 							//this hat is small, draw it again on the second panel this time
 
-							if( hat.Width <= 32 )
+							if( hat.Width <= ProgramCore.minWidth )
 							{
-								rect.X = 32;
+								rect.X = ProgramCore.minWidth;
 								g.DrawImage( hat , rect );
 							}
 
@@ -225,7 +231,7 @@ namespace DuckGameHatCompiler
 					int xoffset = 0;
 					if( quack )
 					{
-						xoffset = 32;
+						xoffset = ProgramCore.minWidth;
 					}
 
 					using( Graphics g = Graphics.FromImage( halfimage ) )
@@ -321,26 +327,9 @@ namespace DuckGameHatCompiler
 			return bigger;
 		}
 
-		private Image OverlapImages( Image img1 , Image img2 , int w , int h )
-		{
-			Image ret;
-
-			using( Bitmap overlapped = new Bitmap( w , h , img1.PixelFormat ) )
-			using( Graphics g = Graphics.FromImage( overlapped ) )
-			{
-				g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
-				g.DrawImage( img1 , new Rectangle( Point.Empty , img1.Size ) );
-
-				g.DrawImage( img2 , new Rectangle( Point.Empty , img2.Size ) );
-				ret = ( Image )overlapped.Clone();
-			}
-
-			return ret;
-		}
-
 		Image GetDuck( )
 		{
-			Bitmap result = new Bitmap( 64 , 32 );
+			Bitmap result = new Bitmap( ProgramCore.maxWidth , ProgramCore.minHeight );
 
 			System.Reflection.Assembly myAssembly = System.Reflection.Assembly.GetExecutingAssembly();
 
@@ -386,8 +375,6 @@ namespace DuckGameHatCompiler
 			currentDuckColor = newColor;
 			UpdateImage();
 		}
-
-
 
 		private void openpngToolStripMenuItem_Click( object sender , EventArgs e )
 		{

@@ -118,18 +118,18 @@ namespace DuckGameHatCompiler
 
 	public class ProgramCore
 	{
-		public static int maxHeight = 32;
-		public static int minHeight = 32;
+		public static readonly int maxHeight = 32;
+		public static readonly int minHeight = 32;
 
-		public static int maxWidth = 64;
-		public static int minWidth = 32;
+		public static readonly int maxWidth = 64;
+		public static readonly int minWidth = 32;
 
 		protected CurrentFileInfo fileInfo;
-		private static int maxImageSize = 8 * 1024;	//not gonna enforce it yet
+		private static readonly int maxImageSize = 8 * 1024;	//not gonna enforce it yet
 		//straight from duck game's source code
 
 		//TODO: read straight from duckgame's exe with mono.cecil?
-		private static byte[] securityKey = new byte[]
+		private static readonly byte[] securityKey = new byte[]
 		{
 			243,
 			22,
@@ -150,7 +150,7 @@ namespace DuckGameHatCompiler
 		};
 
 		//TODO: read straight from duckgame's exe with mono.cecil?
-		private static long duckgameversioncheck = 402965919293045L;
+		private static readonly long duckgameversioncheck = 402965919293045L;
 
 		public CurrentFileInfo FileInfo
 		{
@@ -257,6 +257,7 @@ namespace DuckGameHatCompiler
 						if( !modifycurrent )
 						{
 							fi.TexturePath = abspath;
+							fi.Saved = true;
 							fi.HatName = System.IO.Path.GetFileNameWithoutExtension( abspath ).ToUpper(); //default the hat name to the filename without the extension
 						}
 						this.FileInfo = fi;
@@ -298,8 +299,16 @@ namespace DuckGameHatCompiler
 		}
 
 		//should we embed this into OpenFile? we would need exceptions to communicate with whoever calls that function
-		public ImageError IsImageValid()
+		public ImageError IsImageValid( CurrentFileInfo fi = null )
 		{
+			
+			//no arguments, read current FileInfo
+
+			if( fi == null )
+			{
+				fi = FileInfo;
+			}
+
 			if( FileInfo == null || FileInfo.TextureData == null )
 			{
 				return ImageError.NotLoaded;
@@ -417,6 +426,7 @@ namespace DuckGameHatCompiler
 					fi.HatName = binaryReader.ReadString();
 					int texLen = binaryReader.ReadInt32();
 					fi.TextureData = binaryReader.ReadBytes( texLen );
+					fi.Saved = true;
 				}
 				else
 				{
