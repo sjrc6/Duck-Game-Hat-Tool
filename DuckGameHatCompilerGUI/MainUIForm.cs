@@ -35,7 +35,7 @@ namespace DuckGameHatCompiler
 		public DGHC_MainForm( ProgramCore mycore , string[] programargs )
 		{
 			InitializeComponent();
-
+			
 			this.core = mycore;
 
 			foreach( string arg in programargs.ToList<string>() )
@@ -55,6 +55,8 @@ namespace DuckGameHatCompiler
 			//quack box
 			this.hatsSmallPictureBox.MouseDown += new System.Windows.Forms.MouseEventHandler( this.hatsPictureBox_Click );
 			this.hatsSmallPictureBox.MouseUp += new System.Windows.Forms.MouseEventHandler( this.hatsPictureBox_ReleaseClick );
+
+			enableWatcher = Properties.Settings.Default.AutoRefresh;
 
 			//doesn't work for now, gotta figure out why
 			if( enableWatcher )

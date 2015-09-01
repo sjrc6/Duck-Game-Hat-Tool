@@ -242,7 +242,18 @@ namespace DuckGameHatCompiler
 
 		bool ParseFile( string abspath , bool modifycurrent = false )
 		{
-			byte[] data = System.IO.File.ReadAllBytes( abspath );
+			byte[] data = null;
+
+			using( FileStream file = new FileStream( abspath , FileMode.Open , FileAccess.Read ) )
+			{
+				data = new byte[file.Length];
+				file.Read( data , 0 , data.Length );
+			}
+
+			//couldn't read shit m8
+
+			if( data == null )
+				return false;
 
 			using( MemoryStream stream = new MemoryStream( data ) )
 			{
@@ -301,7 +312,6 @@ namespace DuckGameHatCompiler
 		//should we embed this into OpenFile? we would need exceptions to communicate with whoever calls that function
 		public ImageError IsImageValid( CurrentFileInfo fi = null )
 		{
-			
 			//no arguments, read current FileInfo
 
 			if( fi == null )
