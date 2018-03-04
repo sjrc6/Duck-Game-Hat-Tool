@@ -121,7 +121,7 @@ namespace DuckGameHatCompiler
 		public static readonly int maxHeight = 32;
 		public static readonly int minHeight = 32;
 
-		public static readonly int maxWidth = 64;
+		public static readonly int maxWidth = 96;
 		public static readonly int minWidth = 32;
 
 		protected CurrentFileInfo fileInfo;
@@ -242,18 +242,7 @@ namespace DuckGameHatCompiler
 
 		bool ParseFile( string abspath , bool modifycurrent = false )
 		{
-			byte[] data = null;
-
-			using( FileStream file = new FileStream( abspath , FileMode.Open , FileAccess.Read ) )
-			{
-				data = new byte[file.Length];
-				file.Read( data , 0 , data.Length );
-			}
-
-			//couldn't read shit m8
-
-			if( data == null )
-				return false;
+			byte[] data = System.IO.File.ReadAllBytes( abspath );
 
 			using( MemoryStream stream = new MemoryStream( data ) )
 			{
@@ -336,8 +325,8 @@ namespace DuckGameHatCompiler
 				{
 					return ImageError.NotPng;
 				}
-				
-				if( img.Height > ProgramCore.maxHeight || img.Width > ProgramCore.maxWidth )
+
+                if( img.Height > ProgramCore.maxHeight || img.Width > ProgramCore.maxWidth )
 				{
 					return ImageError.TooBig;
 				}

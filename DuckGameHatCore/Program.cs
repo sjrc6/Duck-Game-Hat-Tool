@@ -30,7 +30,7 @@ namespace DuckGameHatCompiler
 #endif
 
 			core = new ProgramCore();
-			clients.Add( new SharpRaven.RavenClient( "https://3bacc47080a94e9a87fa1ba8816b3d11:5ff9c1f78b7042b2b788057a888ff382@app.getsentry.com/51451" )
+			clients.Add( new SharpRaven.RavenClient( "https://cffc188e57da4c23aedd2d2e9ac45ca3:b7a047ba8dc94dec85ecc0c550a4ff88@sentry.io/298052" )
 			{
 				Logger = loggertag
 			} );
@@ -49,7 +49,7 @@ namespace DuckGameHatCompiler
 			
 		}
 
-		static void SendExceptionsToRaven( object o , UnhandledExceptionEventArgs e  )
+		static void SendExceptionsToRaven( object o , UnhandledExceptionEventArgs e )
 		{
 			foreach( SharpRaven.RavenClient client in clients )
 			{

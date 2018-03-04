@@ -540,6 +540,9 @@ namespace DuckGameHatCompiler
 			this.hatImageBox.Visible = !this.quackMode.Checked;
 		}
 
+        private void label2_Click(object sender, EventArgs e)
+        {
 
-	}
+        }
+    }
 }

@@ -59,11 +59,11 @@
             // 
             this.menuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
-            this.editToolStripMenuItem,
-            this.aboutToolStripMenuItem});
+            this.aboutToolStripMenuItem,
+            this.editToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
-            this.menuStrip1.Size = new System.Drawing.Size(416, 24);
+            this.menuStrip1.Size = new System.Drawing.Size(504, 24);
             this.menuStrip1.TabIndex = 0;
             this.menuStrip1.Text = "menuStrip1";
             this.menuStrip1.ItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.menuStrip1_ItemClicked);
@@ -77,30 +77,30 @@
             this.savehatAsToolStripMenuItem,
             this.savepngAsToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             // 
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
             this.openToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
             this.openToolStripMenuItem.Text = "Open";
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(254, 22);
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openpngToolStripMenuItem_Click);
             // 
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
-            this.closeToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
             this.closeToolStripMenuItem.Text = "Close";
+            this.closeToolStripMenuItem.Size = new System.Drawing.Size(254, 22);
             this.closeToolStripMenuItem.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
             // 
             // saveToolStripMenuItem
             // 
             this.saveToolStripMenuItem.Name = "saveToolStripMenuItem";
             this.saveToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.saveToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
             this.saveToolStripMenuItem.Text = "Save";
+            this.saveToolStripMenuItem.Size = new System.Drawing.Size(254, 22);
             this.saveToolStripMenuItem.Click += new System.EventHandler(this.saveToolStripMenuItem_Click);
             // 
             // savehatAsToolStripMenuItem
@@ -108,8 +108,8 @@
             this.savehatAsToolStripMenuItem.Name = "savehatAsToolStripMenuItem";
             this.savehatAsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Shift) 
             | System.Windows.Forms.Keys.S)));
-            this.savehatAsToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
             this.savehatAsToolStripMenuItem.Text = "Save .hat as...";
+            this.savehatAsToolStripMenuItem.Size = new System.Drawing.Size(254, 22);
             this.savehatAsToolStripMenuItem.Click += new System.EventHandler(this.savehatAsToolStripMenuItem_Click);
             // 
             // savepngAsToolStripMenuItem
@@ -117,8 +117,8 @@
             this.savepngAsToolStripMenuItem.Name = "savepngAsToolStripMenuItem";
             this.savepngAsToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Alt) 
             | System.Windows.Forms.Keys.S)));
-            this.savepngAsToolStripMenuItem.Size = new System.Drawing.Size(216, 22);
             this.savepngAsToolStripMenuItem.Text = "Save .png as...";
+            this.savepngAsToolStripMenuItem.Size = new System.Drawing.Size(254, 22);
             this.savepngAsToolStripMenuItem.Click += new System.EventHandler(this.savepngAsToolStripMenuItem_Click);
             // 
             // editToolStripMenuItem
@@ -138,9 +138,9 @@
             // hatImageBox
             // 
             this.hatImageBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.hatImageBox.Location = new System.Drawing.Point(15, 83);
+            this.hatImageBox.Location = new System.Drawing.Point(15, 84);
             this.hatImageBox.Name = "hatImageBox";
-            this.hatImageBox.Size = new System.Drawing.Size(256, 128);
+            this.hatImageBox.Size = new System.Drawing.Size(382, 127);
             this.hatImageBox.TabIndex = 1;
             this.hatImageBox.TabStop = false;
             this.hatImageBox.Click += new System.EventHandler(this.pictureBox1_Click_1);
@@ -148,15 +148,15 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 52);
+            this.label1.Location = new System.Drawing.Point(12, 30);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(52, 13);
+            this.label1.Size = new System.Drawing.Size(64, 13);
             this.label1.TabIndex = 3;
             this.label1.Text = "HatName";
             // 
             // hatNameBox
             // 
-            this.hatNameBox.Location = new System.Drawing.Point(70, 48);
+            this.hatNameBox.Location = new System.Drawing.Point(70, 27);
             this.hatNameBox.Name = "hatNameBox";
             this.hatNameBox.Size = new System.Drawing.Size(147, 20);
             this.hatNameBox.TabIndex = 4;
@@ -165,11 +165,12 @@
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(294, 83);
+            this.label2.Location = new System.Drawing.Point(400, 84);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(97, 13);
+            this.label2.Size = new System.Drawing.Size(57, 13);
             this.label2.TabIndex = 5;
             this.label2.Text = "Change duck color";
+            this.label2.Click += new System.EventHandler(this.label2_Click);
             // 
             // flowLayoutPanel1
             // 
@@ -177,7 +178,7 @@
             this.flowLayoutPanel1.Controls.Add(this.grayDuckButton);
             this.flowLayoutPanel1.Controls.Add(this.yellowDuckButton);
             this.flowLayoutPanel1.Controls.Add(this.orangeDuckButton);
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(297, 100);
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(403, 100);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
             this.flowLayoutPanel1.Size = new System.Drawing.Size(94, 111);
             this.flowLayoutPanel1.TabIndex = 6;
@@ -187,7 +188,7 @@
             this.whiteDuckButton.AutoSize = true;
             this.whiteDuckButton.Location = new System.Drawing.Point(3, 3);
             this.whiteDuckButton.Name = "whiteDuckButton";
-            this.whiteDuckButton.Size = new System.Drawing.Size(53, 17);
+            this.whiteDuckButton.Size = new System.Drawing.Size(58, 17);
             this.whiteDuckButton.TabIndex = 0;
             this.whiteDuckButton.TabStop = true;
             this.whiteDuckButton.Text = "White";
@@ -199,7 +200,7 @@
             this.grayDuckButton.AutoSize = true;
             this.grayDuckButton.Location = new System.Drawing.Point(3, 26);
             this.grayDuckButton.Name = "grayDuckButton";
-            this.grayDuckButton.Size = new System.Drawing.Size(47, 17);
+            this.grayDuckButton.Size = new System.Drawing.Size(58, 17);
             this.grayDuckButton.TabIndex = 1;
             this.grayDuckButton.TabStop = true;
             this.grayDuckButton.Text = "Gray";
@@ -211,7 +212,7 @@
             this.yellowDuckButton.AutoSize = true;
             this.yellowDuckButton.Location = new System.Drawing.Point(3, 49);
             this.yellowDuckButton.Name = "yellowDuckButton";
-            this.yellowDuckButton.Size = new System.Drawing.Size(56, 17);
+            this.yellowDuckButton.Size = new System.Drawing.Size(67, 17);
             this.yellowDuckButton.TabIndex = 2;
             this.yellowDuckButton.TabStop = true;
             this.yellowDuckButton.Text = "Yellow";
@@ -223,7 +224,7 @@
             this.orangeDuckButton.AutoSize = true;
             this.orangeDuckButton.Location = new System.Drawing.Point(3, 72);
             this.orangeDuckButton.Name = "orangeDuckButton";
-            this.orangeDuckButton.Size = new System.Drawing.Size(60, 17);
+            this.orangeDuckButton.Size = new System.Drawing.Size(85, 17);
             this.orangeDuckButton.TabIndex = 3;
             this.orangeDuckButton.TabStop = true;
             this.orangeDuckButton.Text = "Orange";
@@ -233,9 +234,9 @@
             // hatsSmallPictureBox
             // 
             this.hatsSmallPictureBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.hatsSmallPictureBox.Location = new System.Drawing.Point(89, 83);
+            this.hatsSmallPictureBox.Location = new System.Drawing.Point(89, 84);
             this.hatsSmallPictureBox.Name = "hatsSmallPictureBox";
-            this.hatsSmallPictureBox.Size = new System.Drawing.Size(128, 128);
+            this.hatsSmallPictureBox.Size = new System.Drawing.Size(145, 127);
             this.hatsSmallPictureBox.TabIndex = 7;
             this.hatsSmallPictureBox.TabStop = false;
             this.hatsSmallPictureBox.Visible = false;
@@ -243,9 +244,9 @@
             // quackMode
             // 
             this.quackMode.AutoSize = true;
-            this.quackMode.Location = new System.Drawing.Point(300, 51);
+            this.quackMode.Location = new System.Drawing.Point(406, 64);
             this.quackMode.Name = "quackMode";
-            this.quackMode.Size = new System.Drawing.Size(78, 17);
+            this.quackMode.Size = new System.Drawing.Size(76, 17);
             this.quackMode.TabIndex = 8;
             this.quackMode.Text = "Quack test";
             this.quackMode.UseVisualStyleBackColor = true;
@@ -256,7 +257,7 @@
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(416, 219);
+            this.ClientSize = new System.Drawing.Size(504, 219);
             this.Controls.Add(this.quackMode);
             this.Controls.Add(this.hatsSmallPictureBox);
             this.Controls.Add(this.flowLayoutPanel1);

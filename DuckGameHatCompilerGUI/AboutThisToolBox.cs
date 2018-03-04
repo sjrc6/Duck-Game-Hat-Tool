@@ -127,5 +127,15 @@ namespace DuckGameHatCompiler
             this.linkLabel1.LinkVisited = true;
             System.Diagnostics.Process.Start(this.linkLabel1.Text);
         }
+
+        private void labelCopyright_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void labelVersion_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
